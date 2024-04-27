@@ -1,0 +1,113 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+train_data <- read.csv("train.csv")
+```
+
+
+```{r}
+# Load required libraries
+library(tidyverse)
+library(ggplot2)
+
+# Read CSV file
+train_data <- read.csv("train.csv")
+
+# Rename columns
+colnames(train_data) <- c("id", "home_planet", "cryo_sleep", "cabin", "destination", "age",
+                          "vip", "room_service", "food_court", "shopping_mall", "spa", "vr_deck",
+                          "name", "transported")
+
+# Check the structure, summary, and missing values
+str(train_data)
+summary(train_data)
+colSums(is.na(train_data))
+```
+
+
+```{r}
+# Filter data for passengers who haven't spent money
+not_billed_data <- train_data %>%
+  filter(room_service == 0 & spa == 0 & food_court == 0 & shopping_mall == 0 & vr_deck == 0)
+
+# Calculate mean age of passengers who haven't spent money
+mean_age <- mean(not_billed_data$age, na.rm = TRUE)
+cat(paste("There are", nrow(not_billed_data), "passengers on the board of the spaceship who have not spent money, their average age is", round(mean_age), "\n"))
+```
+
+
+```{r}
+# Impute missing values
+numeric_data <- sapply(train_data, is.numeric)
+train_data[numeric_data] <- lapply(train_data[numeric_data], function(x) replace(x, is.na(x), median(x, na.rm = TRUE)))
+train_data[!numeric_data] <- lapply(train_data[!numeric_data], function(x) replace(x, is.na(x), names(which.max(table(x)))))
+```
+
+
+```{r}
+# Check missing values after imputation
+colSums(is.na(train_data))
+```
+
+
+```{r}
+# Print value counts for categorical variables
+print(table(train_data$home_planet))
+print(table(train_data$destination))
+```
+
+
+```{r}
+# Plot histograms
+par(mfrow = c(3, 2))
+for (i in 1:ncol(train_data)) {
+  if (is.numeric(train_data[, i])) {
+    hist(train_data[, i], main = colnames(train_data)[i], xlab = "")
+  }
+}
+```
+
+
+```{r}
+# Categorize passengers by age
+baby <- train_data[train_data$age <= 5, ]
+kid <- train_data[train_data$age > 5 & train_data$age <= 10, ]
+teenager <- train_data[train_data$age > 10 & train_data$age <= 20, ]
+youth <- train_data[train_data$age > 20 & train_data$age <= 40, ]
+adult <- train_data[train_data$age > 40 & train_data$age <= 60, ]
+old <- train_data[train_data$age > 60, ]
+
+# Print counts of passengers in each age category
+cat("Number of baby passengers: ", nrow(baby), "\n")
+cat("Number of kid passengers: ", nrow(kid), "\n")
+cat("Number of teenager passengers: ", nrow(teenager), "\n")
+cat("Number of youth passengers: ", nrow(youth), "\n")
+cat("Number of adult passengers: ", nrow(adult), "\n")
+cat("Number of old passengers: ", nrow(old), "\n")
+# Plot age categories
+age_categories <- c("baby", "kid", "teenager", "youth", "adult", "old")
+age_counts <- c(nrow(baby), nrow(kid), nrow(teenager), nrow(youth), nrow(adult), nrow(old))
+barplot(age_counts, names.arg = age_categories, main = "Age Categories", xlab = "Number of Passengers", col = "skyblue")
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+# Plot bar plots for selected variables
+par(mfrow = c(2, 2))
+barplot(table(train_data$transported), main = "Transported or not transported", xlab = "Transported")
+barplot(table(train_data$cryo_sleep), main = "Cryo_sleep condition", xlab = "Cryo_sleep")
+barplot(table(train_data$vip), main = "Being VIP condition", xlab = "VIP")
+barplot(table(train_data$destination), main = "Destination", xlab = "Destination")
+```
